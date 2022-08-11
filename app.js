@@ -2,10 +2,20 @@ const express = require("express");
 const  bodyParser = require("body-parser");
 const ejs = require("ejs");
 const _ = require("lodash");
+const mongoose = require("mongoose");
 
 const path = require(__dirname + "/index.js");
-let para = "";
+
 const app = express();
+
+mongoose.connect("mongodb://localhost:27017/Blogging")
+
+const blogSchema = new mongoose.Schema({
+    name:String,
+    content:String
+});
+
+const Blog = mongoose.model("Blog",blogSchema);
 
 
 
@@ -19,8 +29,12 @@ app.use(express.static("public"));
 app.use(bodyParser.urlencoded({extended:true}));
 
 app.get("/",function(req,res){
+
+    Blog.find({},function(err,blogs){
+        res.render("home",{Homepage:homeStartingContent,Objectarr2:blogs});
+    })
     
-    res.render("home",{Homepage:homeStartingContent,Objectarr2:Objectarr,link:"/home/"+ para});
+    
     
 });
 app.get("/about",function(req,res){
@@ -37,27 +51,42 @@ app.get("/compose",function(req,res){
 
 
 app.post("/compose",function(req,res){
-    let post = {
-     title:req.body.title,
-     post:req.body.post
-    }
-    Objectarr.push(post);
-    res.redirect('/');
+    // let post = {
+    //  title:req.body.title,
+    //  post:req.body.post
+    // }
+    // Objectarr.push(post);
+    const newPost = new Blog({
+        name:req.body.title,
+        content:req.body.post
+    })
+    newPost.save(function(err){
+        if(!err){
+            res.redirect('/');
+        }
+    });
+
+    
     
     
  })
 
  app.get("/home/:topic2",function(req,res){
-   para = _.lowerCase(req.params.topic2);
+//    para = _.lowerCase(req.params.topic2);
     
-    for(let i = 0;i< Objectarr.length;i++){
-        const check = Objectarr[i].title;
-        const check2 = _.lowerCase(check);
-        if( check2 === para){
-            res.render('post',{title2:Objectarr[i].title,page:Objectarr[i].post});
+    // for(let i = 0;i< Objectarr.length;i++){
+    //     const check = Objectarr[i].title;
+    //     const check2 = _.lowerCase(check);
+    //     if( check2 === para){
+    //         res.render('post',{title2:Objectarr[i].title,page:Objectarr[i].post});
             
-        }
-    }
+    //     }
+    // }
+   const para = req.params.topic2
+    Blog.findOne({_id: para},function(err,blog){
+        res.render('post',{title2:blog.name,page:blog.content});
+    });
+
 
       
       
